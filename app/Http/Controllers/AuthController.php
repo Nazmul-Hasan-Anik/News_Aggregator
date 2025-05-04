@@ -3,14 +3,17 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
     // Register
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
+
+       try {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
@@ -25,12 +28,18 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'User registered successfully!',
-            'user' => $user,
+            'user' => $user->only(['id', 'name', 'email']),
         ], 201);
+       } catch (\Throwable $th) {
+        return response()->json([
+            'message' => 'User registration failed!',
+            'error' => $th->getMessage(),
+        ], 500);
+       }
     }
 
     // Login (Issue Token)
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $request->validate([
             'email' => 'required|email',
@@ -54,7 +63,7 @@ class AuthController extends Controller
     }
 
     // Logout (Revoke Token)
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
 
